@@ -1,4 +1,5 @@
 import http from "http";
+import { json } from "stream/consumers";
 import url from "url";
 import { v4 as uuidv4 } from "uuid";
 import { Server as WebSocketServer } from "ws";
@@ -14,6 +15,14 @@ export function setupWebSocketServer(server: http.Server) {
     const { username } = url.parse(request.url ?? "", true).query;
     const uuid = uuidv4();
     connections[uuid] = connection;
+
+    if (typeof username !== "string") {
+      connection.send(JSON.stringify({ error: "Invalid username" }));
+      connection.close();
+      return;
+    }
+
+    console.log(`${username} connected with uuid ${uuid}`);
 
     users[uuid] = {
       username: username as string,
@@ -60,7 +69,7 @@ const handleMessage = (bytes: string, uuid: string) => {
   broadcast();
 
   console.log(
-    `${user.username} updated their presence to ${message.x}, ${message.y}`
+    `${user.username} updated their presence to ${JSON.stringify(message)}`
   );
 };
 
